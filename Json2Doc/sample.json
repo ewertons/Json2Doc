@@ -1,40 +1,62 @@
-﻿[{
-    "type": "title",
-    "content": [
-        {
+﻿[
+    {
+        "type": "title",
+        "content": [
+            {
+                "type": "text",
+                "content": "Bla bla blas"
+            }
+        ]
+    },
+    {
+        "type": "overview",
+        "content": {
             "type": "text",
-            "content": "Bla bla blas"
+            "content": "Bla bla blas [somelink](http://somelink.com)"
         }
-    ]
-}, {
-    "type": "overview",
-    "content": "Bla bla blas [somelink](http://somelink.com)"
-}, {
-    "type": "code",
-    "content": "static int somefunction()\n{\treturn 10;\n}"
-}, {
-    "type": "console",
-    "content": [{
-            "type": "command", 
-            "content": "dir /s /q"
-        }, {
-            "type": "output", 
-            "content": "16 files"
-        }]
-}, {
-    "type": "bullet-list",
-    "content": [
-        {
+    },
+    {
+        "type": "code",
+        "content": {
             "type": "text",
-            "content": "another line"
+            "content": "static int somefunction()\n{\treturn 10;\n}"
         }
-    ]
-}, {
-    "type": "numbered-list",
-    "content": [
-        {
-            "type": "text",
-            "content": "another line"
-        }
-    ]
-}]
+    },
+    {
+        "type": "console",
+        "content": [
+            {
+                "type": "command",
+                "content": {
+                    "type": "text",
+                    "content": "dir /s /q"
+                }
+            },
+            {
+                "type": "output",
+                "content": {
+                    "type": "text",
+                    "content": "16 files"
+                }
+            }
+        ]
+    },
+    {
+        "type": "bullet-list",
+        "content": [
+            {
+                "type": "text",
+                "content": "another line"
+            }
+        ]
+    },
+    {
+        "type": "numbered-list",
+        "content": [
+            {
+                "type": "text",
+                "content": "another line"
+            }
+        ]
+    }
+]

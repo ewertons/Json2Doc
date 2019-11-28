@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Json2Doc": {
+      "commandName": "Project",
+      "commandLineArgs": "..\\..\\..\\sample.json ..\\..\\..\\github.css"
+    }
+  }
+}
