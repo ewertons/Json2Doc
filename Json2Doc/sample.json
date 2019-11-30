@@ -4,7 +4,7 @@
         "content": [
             {
                 "type": "text",
-                "content": "Bla bla blas"
+                "content": "This is a text [style1]{This is a text [style2]{This is a} {text This is a\\}} text This is a text"
             }
         ]
     },

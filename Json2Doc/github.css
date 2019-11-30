@@ -1,7 +1,23 @@
-﻿div.title {
-    background-color: antiquewhite
+﻿body {
+    padding-left: 5%;
+    padding-top: 5%
+}
+
+div.title {
+    background-color: white
 }
 
 p.text {
-    color: red
+    color: black;
+    font-family: Calibri
 }
+
+.style1 {
+    color: blue
+}
+
+.style2 {
+    color: orange
+}
+
+

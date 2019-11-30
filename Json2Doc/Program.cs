@@ -6,33 +6,166 @@ namespace DocGen
 {
     class Program
     {
-        static void RenderDocumentDivItem(JToken json, StreamWriter sw, string divClassName)
+        enum DocumentItemType
         {
-            sw.Write($"<div class=\"{divClassName}\">");
+            Title,
+            Overview,
+            Text,
+            Console,
+            Command,
+            Output,
+            Code,
+            BulletList,
+            NumberedList,
+            Unknown
+        }
 
-            JToken content = json["content"];
+        // E.g.:
+        // This is a text [style1]{This is a text [style2]{This is a} text This is a} text This is a text This is a text This is a text 
+        // This is a text <span class="style1">This is a text <span class="style2">This is a</span> text This is a</span> text This is a text This is a text This is a text 
 
-            if (content != null)
+        static string TranslateFromStyleTagToHtml(string text)
+        {
+            string result = "";
+            int textStart = 0;
+            int tagStart = -1;
+            int tagEnd = -1;
+            int counter = 0;
+            int i;
+
+            for (i = 0; i < text.Length; i++)
             {
-                if (content.Type == JTokenType.Array)
+                if (text[i] == '[')
                 {
-                    foreach (var contentItem in content.Children())
+                    tagStart = i;
+                }
+                else if (text[i] == ']')
+                {
+                    if (tagStart != -1)
                     {
-                        RenderDocumentItem(contentItem, sw);
+                        tagEnd = i;
                     }
                 }
-                else if (content.Type == JTokenType.Object)
+                else if (text[i] == '{')
                 {
-                    RenderDocumentItem(content, sw);
+                    if (tagEnd != -1 && (tagEnd + 1) == i)
+                    {
+                        result += text.Substring(textStart, tagStart - textStart);
+                        result += $"<span class=\"{text.Substring(tagStart + 1, tagEnd - tagStart - 1)}\">";
+                        counter++;
+                        tagStart = -1;
+                        tagEnd = -1;
+                        textStart = i + 1;
+                    }
+                }
+                else if (text[i] == '}')
+                {
+                    if (counter > 0)
+                    {
+                        if (text[i - 1] != '\\')
+                        {
+                            result += text.Substring(textStart, i - textStart);
+                            result += "</span>";
+                            counter--;
+                            textStart = i + 1;
+                        }
+                        else
+                        {
+                            result += text.Substring(textStart, i - 1 - textStart);
+                            textStart = i;
+                        }
+                    }
                 }
             }
 
-            sw.Write("</div>");
+            if (textStart < i)
+            {
+                result += text.Substring(textStart, i - textStart);
+            }
+
+            while (counter-- > 0)
+            {
+                result += "</p>";
+            }
+
+            return result;
         }
 
-        static void RenderDocumentItem(JToken json, StreamWriter sw)
+        static string TranslateFromLinkTagToHTml(string text)
         {
-            if (String.Equals((string)json["type"], "text"))
+            string result = "";
+            int textStart = 0;
+            int tagStart = -1;
+            int tagEnd = -1;
+            int counter = 0;
+            int i;
+
+            for (i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '[')
+                {
+                    tagStart = i;
+                }
+                else if (text[i] == ']')
+                {
+                    if (tagStart != -1)
+                    {
+                        tagEnd = i;
+                    }
+                }
+                else if (text[i] == '{')
+                {
+                    if (tagEnd != -1 && (tagEnd + 1) == i)
+                    {
+                        result += text.Substring(textStart, tagStart - textStart);
+                        result += $"<span class=\"{text.Substring(tagStart + 1, tagEnd - tagStart - 1)}\">";
+                        counter++;
+                        tagStart = -1;
+                        tagEnd = -1;
+                        textStart = i + 1;
+                    }
+                }
+                else if (text[i] == '}')
+                {
+                    if (counter > 0)
+                    {
+                        if (text[i - 1] != '\\')
+                        {
+                            result += text.Substring(textStart, i - textStart);
+                            result += "</span>";
+                            counter--;
+                            textStart = i + 1;
+                        }
+                        else
+                        {
+                            result += text.Substring(textStart, i - 1 - textStart);
+                            textStart = i;
+                        }
+                    }
+                }
+            }
+
+            if (textStart < i)
+            {
+                result += text.Substring(textStart, i - textStart);
+            }
+
+            while (counter-- > 0)
+            {
+                result += "</p>";
+            }
+
+            return result;
+        }
+
+        static string TranslateSpecialSyntaxToHTml(string text)
+        {
+            return TranslateFromStyleTagToHtml(text);
+        }
+
+        static void RenderDocumentItem(DocumentItemType docItemType, JToken json, StreamWriter sw, string divClassName)
+        {
+            if (docItemType == DocumentItemType.Text)
             {
                 JToken content = json["content"];
 
@@ -40,33 +173,86 @@ namespace DocGen
                 {
                     if (content.Type == JTokenType.String)
                     {
-                        sw.Write($"<p class=\"text\">{(string)content}</p>");
+                        sw.Write($"<p class=\"text\">{TranslateSpecialSyntaxToHTml((string)content)}</p>");
                     }
                 }
             }
-            else if (String.Equals((string)json["type"], "title"))
+            else
             {
-                RenderDocumentDivItem(json, sw, "title");
+                sw.Write($"<div class=\"{divClassName}\">");
+
+                JToken content = json["content"];
+
+                if (content != null)
+                {
+                    if (content.Type == JTokenType.Array)
+                    {
+                        foreach (var contentItem in content.Children())
+                        {
+                            RenderDocumentItem(contentItem, sw);
+                        }
+                    }
+                    else if (content.Type == JTokenType.Object)
+                    {
+                        RenderDocumentItem(content, sw);
+                    }
+                }
+
+                sw.Write("</div>");
             }
-            else if (String.Equals((string)json["type"], "overview"))
+
+        }
+
+        static DocumentItemType GetDocumentItemType(string typeString)
+        {
+            DocumentItemType type = DocumentItemType.Unknown;
+
+            if (typeString != null)
             {
-                RenderDocumentDivItem(json, sw, "overview");
+                if (String.Equals(typeString, "text"))
+                {
+                    type = DocumentItemType.Text;
+                }
+                else if (String.Equals(typeString, "title"))
+                {
+                    type = DocumentItemType.Title;
+                }
+                else if (String.Equals(typeString, "overview"))
+                {
+                    type = DocumentItemType.Overview;
+                }
+                else if (String.Equals(typeString, "command"))
+                {
+                    type = DocumentItemType.Command;
+                }
+                else if (String.Equals(typeString, "output"))
+                {
+                    type = DocumentItemType.Output;
+                }
+                else if (String.Equals(typeString, "console"))
+                {
+                    type = DocumentItemType.Console;
+                }
+                else if (String.Equals(typeString, "bullet-list"))
+                {
+                    type = DocumentItemType.BulletList;
+                }
+                else if (String.Equals(typeString, "numbered-list"))
+                {
+                    type = DocumentItemType.NumberedList;
+                }
             }
-            else if (String.Equals((string)json["type"], "code"))
+
+            return type;
+        }
+
+        static void RenderDocumentItem(JToken json, StreamWriter sw)
+        {
+            DocumentItemType itemType = GetDocumentItemType((string)json["type"]);
+
+            if (itemType != DocumentItemType.Unknown)
             {
-                RenderDocumentDivItem(json, sw, "code");
-            }
-            else if (String.Equals((string)json["type"], "console"))
-            {
-                RenderDocumentDivItem(json, sw, "console");
-            }
-            else if (String.Equals((string)json["type"], "command"))
-            {
-                RenderDocumentDivItem(json, sw, "command");
-            }
-            else if (String.Equals((string)json["type"], "output"))
-            {
-                RenderDocumentDivItem(json, sw, "output");
+                RenderDocumentItem(itemType, json, sw, "title");
             }
         }
 
