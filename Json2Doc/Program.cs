@@ -6,7 +6,7 @@ namespace DocGen
 {
     class Program
     {
-        enum DocumentItemType
+        private enum DocumentItemType
         {
             Title,
             Overview,
@@ -23,10 +23,9 @@ namespace DocGen
         // E.g.:
         // This is a text [style1]{This is a text [style2]{This is a} text This is a} text This is a text This is a text This is a text 
         // This is a text <span class="style1">This is a text <span class="style2">This is a</span> text This is a</span> text This is a text This is a text This is a text 
-
-        static string TranslateFromStyleTagToHtml(string text)
+        private static string TranslateFromStyleTagToHtml(string text)
         {
-            string result = "";
+            string result = String.Empty;
             int textStart = 0;
             int tagStart = -1;
             int tagEnd = -1;
@@ -69,11 +68,6 @@ namespace DocGen
                             counter--;
                             textStart = i + 1;
                         }
-                        else
-                        {
-                            result += text.Substring(textStart, i - 1 - textStart);
-                            textStart = i;
-                        }
                     }
                 }
             }
@@ -91,55 +85,81 @@ namespace DocGen
             return result;
         }
 
-        static string TranslateFromLinkTagToHTml(string text)
+        private static string TranslateFromLinkTagToHTml(string text)
         {
-            string result = "";
+            string result = String.Empty;
+            string linkText = String.Empty;
             int textStart = 0;
             int tagStart = -1;
             int tagEnd = -1;
-            int counter = 0;
+            int urlStart = -1;
             int i;
 
             for (i = 0; i < text.Length; i++)
             {
                 if (text[i] == '[')
                 {
-                    tagStart = i;
-                }
-                else if (text[i] == ']')
-                {
-                    if (tagStart != -1)
+                    if (i == 0 || text[i - 1] != '\\')
                     {
-                        tagEnd = i;
-                    }
-                }
-                else if (text[i] == '{')
-                {
-                    if (tagEnd != -1 && (tagEnd + 1) == i)
-                    {
-                        result += text.Substring(textStart, tagStart - textStart);
-                        result += $"<span class=\"{text.Substring(tagStart + 1, tagEnd - tagStart - 1)}\">";
-                        counter++;
-                        tagStart = -1;
-                        tagEnd = -1;
-                        textStart = i + 1;
-                    }
-                }
-                else if (text[i] == '}')
-                {
-                    if (counter > 0)
-                    {
-                        if (text[i - 1] != '\\')
+                        if (tagStart == -1)
                         {
-                            result += text.Substring(textStart, i - textStart);
-                            result += "</span>";
-                            counter--;
-                            textStart = i + 1;
+                            tagStart = i;
                         }
                         else
                         {
-                            result += text.Substring(textStart, i - 1 - textStart);
-                            textStart = i;
+                            tagStart = -1;
+                            tagEnd = -1;
+                            urlStart = -1;
+                        }
+                    }
+                }
+                else if (text[i] == ']')
+                {
+                    if (tagStart != -1 && text[i - 1] != '\\')
+                    {
+                        if (tagEnd == -1)
+                        {
+                            tagEnd = i;
+                        }
+                        else
+                        {
+                            tagStart = -1;
+                            tagEnd = -1;
+                            urlStart = -1;
+                        }
+                    }
+                }
+                else if (text[i] == '(')
+                {
+                    if (tagEnd != -1 /* Tag already found and ... */ && urlStart == -1 /* ... Url not found yet */ )
+                    {
+                        if ((tagEnd + 1) == i)
+                        {
+                            urlStart = i;
+                        }
+                        else
+                        {
+                            tagStart = -1;
+                            tagEnd = -1;
+                        }
+                    }
+                }
+                else if (text[i] == ')')
+                {
+                    if (urlStart != -1)
+                    {
+                        if (text[i - 1] != '\\')
+                        {
+                            result += text.Substring(textStart, tagStart);
+                            result += "<a href=\"" + text.Substring(urlStart + 1, i - urlStart - 1) + "\">";
+                            result += text.Substring(tagStart + 1, tagEnd - tagStart - 1);
+                            result += "</a>";
+
+                            tagStart = -1;
+                            tagEnd = -1;
+                            urlStart = -1;
+
+                            textStart = i + 1;
                         }
                     }
                 }
@@ -150,20 +170,57 @@ namespace DocGen
                 result += text.Substring(textStart, i - textStart);
             }
 
-            while (counter-- > 0)
+            return result;
+        }
+
+        private static string UnescapeString(string text)
+        {
+            string result = String.Empty;
+            int textStart = 0;
+            int i;
+            int previousBackSlash = -1;
+
+            for (i = 1; i < text.Length; i++)
             {
-                result += "</p>";
+                if (text[i] == '\\')
+                {
+                    previousBackSlash = i;
+                }
+                else if (previousBackSlash == (i - 1))
+                {
+                    char[] specialChars = { '[', ']', '(', ')', '{', '}' };
+
+                    foreach (char specialChar in specialChars)
+                    {
+                        if (text[i] == specialChar)
+                        {
+                            result += text.Substring(textStart, i - textStart - 1);
+                            result += specialChar;
+                            previousBackSlash = -1;
+                            textStart = i + 1;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (textStart < i)
+            {
+                result += text.Substring(textStart, i - textStart);
             }
 
             return result;
         }
 
-        static string TranslateSpecialSyntaxToHTml(string text)
+        private static string TranslateSpecialSyntaxToHTml(string text)
         {
-            return TranslateFromStyleTagToHtml(text);
+            text = TranslateFromLinkTagToHTml(text);
+            text = TranslateFromStyleTagToHtml(text);
+            text = UnescapeString(text);
+            return text;
         }
 
-        static void RenderDocumentItem(DocumentItemType docItemType, JToken json, StreamWriter sw, string divClassName)
+        private static void RenderDocumentItem(DocumentItemType docItemType, JToken json, StreamWriter sw, string divClassName)
         {
             if (docItemType == DocumentItemType.Text)
             {
@@ -203,7 +260,7 @@ namespace DocGen
 
         }
 
-        static DocumentItemType GetDocumentItemType(string typeString)
+        private static DocumentItemType GetDocumentItemType(string typeString)
         {
             DocumentItemType type = DocumentItemType.Unknown;
 
@@ -246,7 +303,7 @@ namespace DocGen
             return type;
         }
 
-        static void RenderDocumentItem(JToken json, StreamWriter sw)
+        private static void RenderDocumentItem(JToken json, StreamWriter sw)
         {
             DocumentItemType itemType = GetDocumentItemType((string)json["type"]);
 
@@ -256,7 +313,7 @@ namespace DocGen
             }
         }
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             if (args.Length != 2)
             {
