@@ -1,2 +1,2 @@
 # GithubDoc
-Generates documentation in HTML using the beautiful format used by GitHub.
+Generates documentation in HTML a json descriptive document and a CSS stylesheet.
