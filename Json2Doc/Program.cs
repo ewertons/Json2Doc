@@ -9,14 +9,12 @@ namespace DocGen
         private enum DocumentItemType
         {
             Title,
-            Overview,
+            Index,
             Text,
-            Console,
-            Command,
-            Output,
-            Code,
+            Box,
             BulletList,
             NumberedList,
+            Table,
             Unknown
         }
 
@@ -220,7 +218,7 @@ namespace DocGen
             return text;
         }
 
-        private static void RenderDocumentItem(DocumentItemType docItemType, JToken json, StreamWriter sw, string divClassName)
+        private static void RenderDocumentItem(DocumentItemType docItemType, JToken json, StreamWriter sw)
         {
             if (docItemType == DocumentItemType.Text)
             {
@@ -228,20 +226,52 @@ namespace DocGen
 
                 if (content != null)
                 {
+                    string style = (string)json["style"] ?? "text";
+
                     if (content.Type == JTokenType.String)
                     {
-                        sw.Write($"<p class=\"text\">{TranslateSpecialSyntaxToHTml((string)content)}</p>");
+                        sw.WriteLine($"<span class=\"{style}\">{TranslateSpecialSyntaxToHTml((string)content)}</span>");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Invalid content type for text element ({content.Type})");
                     }
                 }
             }
-            else
+            else if (docItemType == DocumentItemType.Title)
             {
-                sw.Write($"<div class=\"{divClassName}\">");
-
                 JToken content = json["content"];
 
                 if (content != null)
                 {
+                    string level = (string)json["level"];
+                    uint number;
+
+                    if (!uint.TryParse(level, out number))
+                    {
+                        number = 0;
+                    }
+
+                    if (content.Type == JTokenType.String)
+                    {
+                        sw.Write($"<p class=\"title_level{number}\">{TranslateSpecialSyntaxToHTml((string)content)}</p>");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Invalid content type for title element ({content.Type})");
+                    }
+                }
+            }
+            else if (docItemType == DocumentItemType.Box)
+            {
+                JToken content = json["content"];
+
+                if (content != null)
+                {
+                    string style = (string)json["style"];
+
+                    sw.Write($"<pre class=\"{style}\">");
+
                     if (content.Type == JTokenType.Array)
                     {
                         foreach (var contentItem in content.Children())
@@ -253,11 +283,108 @@ namespace DocGen
                     {
                         RenderDocumentItem(content, sw);
                     }
+
+                    sw.Write("</pre>");
+                }
+            }
+            else if (docItemType == DocumentItemType.Index)
+            {
+
+            }
+            else if (docItemType == DocumentItemType.BulletList)
+            {
+                JToken content = json["content"];
+
+                if (content != null)
+                {
+                    string style = (string)json["style"] ?? "defaultBulletList";
+
+                    sw.Write($"<ul class=\"{style}\">");
+
+                    if (content.Type == JTokenType.Array)
+                    {
+                        foreach (var contentItem in content.Children())
+                        {
+                            sw.Write($"<li>");
+                            RenderDocumentItem(contentItem, sw);
+                            sw.Write($"</li>");
+                        }
+                    }
+
+                    sw.Write("</ul>");
+                }
+            }
+            else if (docItemType == DocumentItemType.NumberedList)
+            {
+                JToken content = json["content"];
+
+                if (content != null)
+                {
+                    string style = (string)json["style"] ?? "1";
+
+                    sw.Write($"<ol type=\"{style}\">");
+
+                    if (content.Type == JTokenType.Array)
+                    {
+                        foreach (var contentItem in content.Children())
+                        {
+                            sw.Write($"<li>");
+                            RenderDocumentItem(contentItem, sw);
+                            sw.Write($"</li>");
+                        }
+                    }
+
+                    sw.Write("</ol>");
+                }
+            }
+            else if (docItemType == DocumentItemType.Table)
+            {
+                string style = (string)json["style"];
+
+                sw.Write($"<table class=\"{style}\">");
+
+                JToken headers = json["headers"];
+
+                if (headers != null && headers.Type == JTokenType.Array)
+                {
+                    sw.Write($"<tr>");
+
+                    foreach (var contentItem in headers.Children())
+                    {
+                        sw.Write($"<th>");
+                        RenderDocumentItem(contentItem, sw);
+                        sw.Write($"</th>");
+                    }
+
+                    sw.Write($"</tr>");
                 }
 
-                sw.Write("</div>");
-            }
+                JToken rows = json["rows"];
 
+                if (rows != null && rows.Type == JTokenType.Array)
+                {
+                    foreach (var row in rows.Children())
+                    {
+                        sw.Write($"<tr>");
+
+                        JToken cells = row["row"];
+
+                        if (cells != null)
+                        {
+                            foreach (var cell in cells.Children())
+                            {
+                                sw.Write($"<td>");
+                                RenderDocumentItem(cell, sw);
+                                sw.Write($"</td>");
+                            }
+                        }
+
+                        sw.Write($"</tr>");
+                    }
+                }
+
+                sw.Write("</table>");
+            }
         }
 
         private static DocumentItemType GetDocumentItemType(string typeString)
@@ -274,21 +401,13 @@ namespace DocGen
                 {
                     type = DocumentItemType.Title;
                 }
-                else if (String.Equals(typeString, "overview"))
+                else if (String.Equals(typeString, "box"))
                 {
-                    type = DocumentItemType.Overview;
+                    type = DocumentItemType.Box;
                 }
-                else if (String.Equals(typeString, "command"))
+                else if (String.Equals(typeString, "index"))
                 {
-                    type = DocumentItemType.Command;
-                }
-                else if (String.Equals(typeString, "output"))
-                {
-                    type = DocumentItemType.Output;
-                }
-                else if (String.Equals(typeString, "console"))
-                {
-                    type = DocumentItemType.Console;
+                    type = DocumentItemType.Index;
                 }
                 else if (String.Equals(typeString, "bullet-list"))
                 {
@@ -297,6 +416,10 @@ namespace DocGen
                 else if (String.Equals(typeString, "numbered-list"))
                 {
                     type = DocumentItemType.NumberedList;
+                }
+                else if (String.Equals(typeString, "table"))
+                {
+                    type = DocumentItemType.Table;
                 }
             }
 
@@ -309,7 +432,7 @@ namespace DocGen
 
             if (itemType != DocumentItemType.Unknown)
             {
-                RenderDocumentItem(itemType, json, sw, "title");
+                RenderDocumentItem(itemType, json, sw);
             }
         }
 

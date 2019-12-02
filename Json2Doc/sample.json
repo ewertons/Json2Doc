@@ -1,62 +1,141 @@
 ﻿[
     {
         "type": "title",
+        "level": 0,
+        "content": "A sample for generating documentation"
+    },
+    {
+        "type": "text",
+        "content": "This is a text in black [style1]{and this is a text in blue, [style2]{turned orange} {and back to blue\\}} before resorting to black"
+    },
+    {
+        "type": "index"
+    },
+    {
+        "type": "box",
+        "style": "console",
         "content": [
             {
                 "type": "text",
-                "content": "This is a text [style1]{This is a text [style2]{This is a} {text This is a\\}} text This is a text"
-            }
-        ]
-    },
-    {
-        "type": "overview",
-        "content": {
-            "type": "text",
-            "content": "Bla bla blas [somelink](http://somelink.com)"
-        }
-    },
-    {
-        "type": "code",
-        "content": {
-            "type": "text",
-            "content": "static int somefunction()\n{\treturn 10;\n}"
-        }
-    },
-    {
-        "type": "console",
-        "content": [
-            {
-                "type": "command",
-                "content": {
-                    "type": "text",
-                    "content": "dir /s /q"
-                }
+                "style": "command",
+                "content": "C:\\> dir /s /q"
             },
             {
-                "type": "output",
-                "content": {
-                    "type": "text",
-                    "content": "16 files"
-                }
+                "type": "text",
+                "style": "output",
+                "content": "11/09/2019  09:20 AM    &lt;DIR&gt;          Program Files"
+            },
+            {
+                "type": "text",
+                "style": "output",
+                "content": "11/06/2019  07:55 PM    &lt;DIR&gt;          Program Files (x86)"
+            },
+            {
+                "type": "text",
+                "style": "output",
+                "content": "07/17/2019  10:25 PM    &lt;DIR&gt;          Users"
+            },
+            {
+                "type": "text",
+                "style": "output",
+                "content": "11/25/2019  09:37 AM    &lt;DIR&gt;          Windows"
+            },
+            {
+                "type": "text",
+                "style": "output",
+                "content": "               0 File(s)              0 bytes"
+            },
+            {
+                "type": "text",
+                "style": "output",
+                "content": "               5 Dir(s)  884,669,497,344 bytes free"
             }
         ]
+    },
+    {
+        "type": "text",
+        "content": "A bullet list:"
     },
     {
         "type": "bullet-list",
         "content": [
             {
                 "type": "text",
-                "content": "another line"
+                "content": "First item of bullet list"
+            },
+            {
+                "type": "text",
+                "content": "Second item of bullet list"
+            },
+            {
+                "type": "text",
+                "content": "Third item of bullet list"
             }
         ]
     },
     {
+        "type": "text",
+        "content": "A numbered list:"
+    },
+    {
         "type": "numbered-list",
+        "style": "1",
         "content": [
             {
                 "type": "text",
-                "content": "another line"
+                "content": "First item of numbered list"
+            },
+            {
+                "type": "text",
+                "content": "Second item of numbered list"
+            },
+            {
+                "type": "text",
+                "content": "Third item of numbered list"
+            }
+        ]
+    },
+    {
+        "type": "table",
+        "headers": [
+            { "type": "text", "content": "Column 1" },
+            { "type": "text", "content": "Column 2" },
+            { "type": "text", "content": "Column 3" }
+        ],
+        "rows": [
+            {
+                "row": [
+                    { "type": "text", "content": "Value 1,1" },
+                    { "type": "text", "content": "Value 1,2" },
+                    { "type": "text", "content": "Value 1,3" }
+                ]
+            },
+{
+                "row": [
+                    { "type": "text", "content": "Value 2,1" },
+                    { "type": "text", "content": "Value 2,2" },
+                    { "type": "text", "content": "Value 2,3" }
+                ]
+            },{
+                "row": [
+                    { "type": "text", "content": "Value 3,1" },
+                    { "type": "text", "content": "Value 3,2" },
+                    { "type": "text", "content": "Value 3,3" }
+                ]
+            },{
+                "row": [
+                    { "type": "text", "content": "Value 4,1" },
+                    { "type": "text", "content": "Value 4,2" },
+                    { "type": "text", "content": "Value 4,3" }
+                ]
+            },{
+                "row": [
+                    { "type": "text", "content": "Value 5,1" },
+                    { "type": "text", "content": "Value 5,2" },
+                    { "type": "text", "content": "Value 5,3" }
+                ]
             }
         ]
     }
+
 ]
